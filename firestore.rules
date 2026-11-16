@@ -1,0 +1,228 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'detectedType', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'detectedType', 'preferredWing', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 120
+        && data.detectedType is int
+        && data.detectedType >= 1
+        && data.detectedType <= 9
+        && (!('preferredWing' in data) || (data.preferredWing is string && data.preferredWing.size() >= 2 && data.preferredWing.size() <= 10))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDiagnosticResult(data, userId) {
+      return data.keys().hasAll(['uid', 'primaryType', 'secondaryType', 'wing', 'dominantTriad', 'scores', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'primaryType', 'secondaryType', 'wing', 'dominantTriad', 'scores', 'createdAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.primaryType is int
+        && data.primaryType >= 1
+        && data.primaryType <= 9
+        && data.secondaryType is int
+        && data.secondaryType >= 1
+        && data.secondaryType <= 9
+        && data.wing is string
+        && data.wing.size() >= 2
+        && data.wing.size() <= 10
+        && data.dominantTriad in ['instinctive', 'feeling', 'thinking']
+        && data.scores is list
+        && data.scores.size() == 9
+        && data.scores[0] is number
+        && data.createdAt is timestamp;
+    }
+
+    function isValidEssenceProgram(data, userId) {
+      return data.keys().hasAll(['uid', 'enneatypeNumber', 'frequencyHz', 'intention', 'affirmation', 'durationMinutes', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'enneatypeNumber', 'frequencyHz', 'intention', 'affirmation', 'durationMinutes', 'createdAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.enneatypeNumber is int
+        && data.enneatypeNumber >= 1
+        && data.enneatypeNumber <= 9
+        && data.frequencyHz is int
+        && data.frequencyHz >= 100
+        && data.frequencyHz <= 1200
+        && data.intention is string
+        && data.intention.size() >= 3
+        && data.intention.size() <= 600
+        && data.affirmation is string
+        && data.affirmation.size() >= 3
+        && data.affirmation.size() <= 400
+        && data.durationMinutes is int
+        && data.durationMinutes >= 0
+        && data.durationMinutes <= 180
+        && data.createdAt is timestamp;
+    }
+
+    function isValidActionPlan(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'enneatypeNumber',
+          'wing',
+          'focusArea',
+          'title',
+          'integrationDirection',
+          'weeklyMantra',
+          'warningSign',
+          'dailyChallenges',
+          'completedDays',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'enneatypeNumber',
+          'wing',
+          'focusArea',
+          'title',
+          'integrationDirection',
+          'weeklyMantra',
+          'warningSign',
+          'dailyChallenges',
+          'completedDays',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.enneatypeNumber is int
+        && data.enneatypeNumber >= 1
+        && data.enneatypeNumber <= 9
+        && data.wing is string
+        && data.wing.size() >= 2
+        && data.wing.size() <= 10
+        && data.focusArea is string
+        && data.focusArea.size() >= 2
+        && data.focusArea.size() <= 120
+        && data.title is string
+        && data.title.size() >= 3
+        && data.title.size() <= 200
+        && data.integrationDirection is string
+        && data.integrationDirection.size() >= 5
+        && data.integrationDirection.size() <= 800
+        && data.weeklyMantra is string
+        && data.weeklyMantra.size() >= 3
+        && data.weeklyMantra.size() <= 300
+        && data.warningSign is string
+        && data.warningSign.size() >= 3
+        && data.warningSign.size() <= 500
+        && data.dailyChallenges is list
+        && data.dailyChallenges.size() == 7
+        && data.dailyChallenges[0] is map
+        && data.completedDays is list
+        && data.completedDays.size() <= 7
+        && (data.completedDays.size() == 0 || data.completedDays[0] is int)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['detectedType', 'preferredWing', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      match /diagnostics/{diagnosticId} {
+        allow get: if isValidId(userId) && isValidId(diagnosticId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(diagnosticId)
+          && isVerifiedOwner(userId)
+          && isValidDiagnosticResult(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(diagnosticId) && isVerifiedOwner(userId);
+      }
+
+      match /essencePrograms/{programId} {
+        allow get: if isValidId(userId) && isValidId(programId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(programId)
+          && isVerifiedOwner(userId)
+          && isValidEssenceProgram(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(programId) && isVerifiedOwner(userId);
+      }
+
+      match /actionPlans/{planId} {
+        allow get: if isValidId(userId) && isValidId(planId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(planId)
+          && isVerifiedOwner(userId)
+          && isValidActionPlan(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidId(planId)
+          && isVerifiedOwner(userId)
+          && isValidActionPlan(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['completedDays', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(planId) && isVerifiedOwner(userId);
+      }
+    }
+  }
+}

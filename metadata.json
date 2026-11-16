@@ -1,0 +1,8 @@
+{
+  "name": "Remix Atlas del Eneagrama",
+  "description": "Exploración interactiva en 3D y monografía visual de los 9 eneatipos y sus 9 niveles de desarrollo psicológico.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

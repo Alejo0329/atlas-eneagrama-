@@ -1,0 +1,206 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Perfil del usuario autenticado con su eneatipo detectado y ala preferida.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "detectedType": {
+          "type": "integer",
+          "description": "Eneatipo principal del 1 al 9."
+        },
+        "preferredWing": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "detectedType", "createdAt", "updatedAt"]
+    },
+    "DiagnosticResult": {
+      "title": "DiagnosticResult",
+      "description": "Resultado guardado del test inicial de diagnóstico de 12 preguntas.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "primaryType": {
+          "type": "integer"
+        },
+        "secondaryType": {
+          "type": "integer"
+        },
+        "wing": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "dominantTriad": {
+          "type": "string",
+          "enum": ["instinctive", "feeling", "thinking"]
+        },
+        "scores": {
+          "type": "array",
+          "description": "Arreglo de 9 puntajes ordenados del eneatipo 1 al 9."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "primaryType", "secondaryType", "wing", "dominantTriad", "scores", "createdAt"]
+    },
+    "EssenceProgram": {
+      "title": "EssenceProgram",
+      "description": "Programación consciente para la esencia y registro de sesión de meditación con frecuencia.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "enneatypeNumber": {
+          "type": "integer"
+        },
+        "frequencyHz": {
+          "type": "integer"
+        },
+        "intention": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 600
+        },
+        "affirmation": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 400
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "enneatypeNumber", "frequencyHz", "intention", "affirmation", "durationMinutes", "createdAt"]
+    },
+    "ActionPlan": {
+      "title": "ActionPlan",
+      "description": "Plan de acción semanal personalizado generado por IA para la integración del eneatipo.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "enneatypeNumber": {
+          "type": "integer"
+        },
+        "wing": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "focusArea": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "integrationDirection": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 800
+        },
+        "weeklyMantra": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 300
+        },
+        "warningSign": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 500
+        },
+        "dailyChallenges": {
+          "type": "array"
+        },
+        "completedDays": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "enneatypeNumber",
+        "wing",
+        "focusArea",
+        "title",
+        "integrationDirection",
+        "weeklyMantra",
+        "warningSign",
+        "dailyChallenges",
+        "completedDays",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Preferencias y eneatipo activo del usuario autenticado."
+    },
+    "/users/{userId}/diagnostics/{diagnosticId}": {
+      "schema": { "$ref": "#/entities/DiagnosticResult" },
+      "description": "Historial de diagnósticos iniciales del usuario."
+    },
+    "/users/{userId}/essencePrograms/{programId}": {
+      "schema": { "$ref": "#/entities/EssenceProgram" },
+      "description": "Programaciones de esencia y sesiones de meditación del usuario."
+    },
+    "/users/{userId}/actionPlans/{planId}": {
+      "schema": { "$ref": "#/entities/ActionPlan" },
+      "description": "Planes semanales de integración generados por IA."
+    }
+  }
+}
