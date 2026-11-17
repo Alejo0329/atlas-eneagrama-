@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ActionPlanView } from './components/ActionPlanView';
 import { ControlDock } from './components/ControlDock';
 import { DiagnosticView } from './components/DiagnosticView';
@@ -208,6 +209,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AtlasAppContent />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
