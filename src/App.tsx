@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionPlanView } from './components/ActionPlanView';
+import { AdminView } from './components/AdminView';
 import { ControlDock } from './components/ControlDock';
 import { DiagnosticView } from './components/DiagnosticView';
 import { EnneagramCanvas } from './components/EnneagramCanvas';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { GrowthJournalView } from './components/GrowthJournalView';
 import { MeditationView } from './components/MeditationView';
 import { NineLevelsGuide } from './components/NineLevelsGuide';
 import { ProfileView } from './components/ProfileView';
 import { AppViewMode, TopBar } from './components/TopBar';
+import { UpgradeModal } from './components/UpgradeModal';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { getProfileByNumber } from './data/enneagramData';
 import { CameraPreset } from './three/enneagramScene';
@@ -18,6 +22,8 @@ function AtlasAppContent() {
   const [viewMode, setViewMode] = useState<AppViewMode>('profile');
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('overview');
   const [dockCollapsed, setDockCollapsed] = useState<boolean>(false);
+  const [upgradeOpen, setUpgradeOpen] = useState<boolean>(false);
+  const [upgradeTitle, setUpgradeTitle] = useState<string | undefined>(undefined);
   const syncedUidRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -33,6 +39,11 @@ function AtlasAppContent() {
 
   const activeProfile = getProfileByNumber(activeNumber);
   const hoveredProfile = hoveredNumber ? getProfileByNumber(hoveredNumber) : null;
+
+  const openUpgradeModal = useCallback((reason?: string) => {
+    setUpgradeTitle(reason);
+    setUpgradeOpen(true);
+  }, []);
 
   const handleSelectProfile = useCallback((num: number) => {
     setActiveNumber(num);
@@ -95,6 +106,7 @@ function AtlasAppContent() {
         }}
         activeNumber={activeNumber}
         activeName={activeProfile.name}
+        onOpenUpgrade={() => openUpgradeModal()}
       />
 
       {/* Active Content View */}
@@ -131,11 +143,24 @@ function AtlasAppContent() {
         <MeditationView
           activeNumber={activeNumber}
           onSelectNumber={(num) => setActiveNumber(num)}
+          onRequestUpgrade={(reason) => openUpgradeModal(reason)}
+          onOpenAdmin={() => {
+            setViewMode('admin');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
       )}
 
       {viewMode === 'plan' && (
         <ActionPlanView
+          activeNumber={activeNumber}
+          onSelectNumber={(num) => setActiveNumber(num)}
+          onRequestUpgrade={(reason) => openUpgradeModal(reason)}
+        />
+      )}
+
+      {viewMode === 'journal' && (
+        <GrowthJournalView
           activeNumber={activeNumber}
           onSelectNumber={(num) => setActiveNumber(num)}
         />
@@ -151,6 +176,8 @@ function AtlasAppContent() {
           }}
         />
       )}
+
+      {viewMode === 'admin' && <AdminView />}
 
       {/* Unobtrusive Top-Left Active Caption when inspecting the Pure 3D Scene */}
       {viewMode === 'scene3d' && (
@@ -185,6 +212,13 @@ function AtlasAppContent() {
         </div>
       )}
 
+      {/* Subtle Freemium Upgrade Modal */}
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        contextTitle={upgradeTitle}
+      />
+
       {/* Unified Collapsible Bottom Control Dock */}
       <ControlDock
         activeNumber={activeNumber}
@@ -206,8 +240,10 @@ function AtlasAppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AtlasAppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AtlasAppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

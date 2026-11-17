@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass } from 'lucide-react';
 import { ENNEAGRAM_PROFILES } from '../data/enneagramData';
 import { CameraPreset } from '../three/enneagramScene';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface ControlDockProps {
   activeNumber: number;
@@ -31,7 +32,7 @@ export function ControlDock({
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center max-w-[min(900px,95vw)] pointer-events-none"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center max-w-[min(960px,95vw)] pointer-events-none"
       role="region"
       aria-label="Navegador rápido del Eneagrama"
     >
@@ -105,6 +106,8 @@ export function ControlDock({
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
+
+          <PWAInstallButton />
 
           {/* Camera preset selector (shown cleanly when viewing 3D scene) */}
           {showCameraControls && (

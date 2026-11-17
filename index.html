@@ -15,12 +15,93 @@
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Eneagrama" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        var isMetaMaskNoise = function (msg, stack, file) {
+          var s = String(msg || '') + ' ' + String(stack || '') + ' ' + String(file || '');
+          return (
+            s.indexOf('chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+            s.indexOf('Failed to connect to MetaMask') !== -1
+          );
+        };
+        window.addEventListener(
+          'unhandledrejection',
+          function (e) {
+            var r = e.reason;
+            if (isMetaMaskNoise(r && r.message ? r.message : r, r && r.stack)) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }
+          },
+          true
+        );
+        window.addEventListener(
+          'error',
+          function (e) {
+            var err = e.error;
+            if (
+              isMetaMaskNoise(
+                err && err.message ? err.message : e.message,
+                err && err.stack,
+                e.filename
+              )
+            ) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }
+          },
+          true
+        );
+
+        if ('caches' in window) {
+          caches.keys().then(function (keys) {
+            var legacy = keys.filter(function (k) {
+              return k === 'atlas-eneagrama-v1' || k === 'atlas-eneagrama-v2';
+            });
+            if (legacy.length > 0) {
+              return Promise.all(
+                legacy.map(function (k) {
+                  return caches.delete(k);
+                })
+              )
+                .then(function () {
+                  if ('serviceWorker' in navigator) {
+                    return navigator.serviceWorker.getRegistrations().then(function (regs) {
+                      return Promise.all(
+                        regs.map(function (reg) {
+                          return reg.unregister();
+                        })
+                      );
+                    });
+                  }
+                })
+                .then(function () {
+                  try {
+                    if (!sessionStorage.getItem('atlas_sw_v3_cleaned')) {
+                      sessionStorage.setItem('atlas_sw_v3_cleaned', '1');
+                      window.location.reload();
+                    }
+                  } catch (_) {}
+                });
+            }
+          });
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#111318] text-[#F2EFE9] antialiased selection:bg-[#D4A853]/30 selection:text-[#F2EFE9]">
     <div id="root"></div>

@@ -28,19 +28,24 @@ export function EnneagramCanvas({
     const container = mountRef.current;
     if (!container) return;
 
-    const controller = new EnneagramSceneController({
-      container,
-      initialNumber: activeNumber,
-      onSelectProfile: (num) => onSelectRef.current(num),
-      onHoverProfile: (num) => onHoverRef.current?.(num),
-      onContextIssue: (lost) => setContextLost(lost),
-    });
-    controllerRef.current = controller;
+    try {
+      const controller = new EnneagramSceneController({
+        container,
+        initialNumber: activeNumber,
+        onSelectProfile: (num) => onSelectRef.current(num),
+        onHoverProfile: (num) => onHoverRef.current?.(num),
+        onContextIssue: (lost) => setContextLost(lost),
+      });
+      controllerRef.current = controller;
 
-    return () => {
-      controller.dispose();
-      controllerRef.current = null;
-    };
+      return () => {
+        controller.dispose();
+        controllerRef.current = null;
+      };
+    } catch {
+      setContextLost(true);
+      return undefined;
+    }
     // Initialize WebGL scene once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

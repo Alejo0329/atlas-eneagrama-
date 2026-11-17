@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import {
   Check,
+  Lock,
   Sparkles,
   Trash2,
   TrendingUp,
@@ -46,6 +47,7 @@ interface ActionPlanRecord {
 interface ActionPlanViewProps {
   activeNumber: number;
   onSelectNumber: (num: number) => void;
+  onRequestUpgrade: (reason: string) => void;
 }
 
 const FOCUS_AREAS = [
@@ -58,8 +60,12 @@ const FOCUS_AREAS = [
 
 const BAND_OPTIONS = ['Niveles Sanos', 'Niveles Promedio', 'Niveles de Estrés'];
 
-export function ActionPlanView({ activeNumber, onSelectNumber }: ActionPlanViewProps) {
-  const { user, userProfile } = useAuth();
+export function ActionPlanView({
+  activeNumber,
+  onSelectNumber,
+  onRequestUpgrade,
+}: ActionPlanViewProps) {
+  const { user, userProfile, isPro } = useAuth();
   const profile = getProfileByNumber(activeNumber);
 
   const defaultWing =
@@ -147,6 +153,10 @@ export function ActionPlanView({ activeNumber, onSelectNumber }: ActionPlanViewP
   }, [user]);
 
   const handleGeneratePlan = async () => {
+    if (!isPro) {
+      onRequestUpgrade('Generación Ilimitada del Plan de Acción Semanal IA');
+      return;
+    }
     setGenerating(true);
     setApiError(null);
 
@@ -391,8 +401,18 @@ export function ActionPlanView({ activeNumber, onSelectNumber }: ActionPlanViewP
                 onClick={() => void handleGeneratePlan()}
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-medium bg-[#D4A853] text-[#111318] rounded-md hover:bg-[#E0B96A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>{generating ? 'Diseñando tu semana...' : 'Generar Mini-Reto Semanal'}</span>
+                {!isPro ? (
+                  <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+                <span>
+                  {generating
+                    ? 'Diseñando tu semana...'
+                    : !isPro
+                    ? 'Desbloquear Plan Semanal IA (Pro)'
+                    : 'Generar Mini-Reto Semanal'}
+                </span>
               </button>
             </div>
           </section>

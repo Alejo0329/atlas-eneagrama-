@@ -34,9 +34,16 @@ service cloud.firestore {
       return isVerified() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isVerified() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'alejandrogallego0329@gmail.com'
+      );
+    }
+
     function isValidUserProfile(data, userId) {
       return data.keys().hasAll(['uid', 'displayName', 'detectedType', 'createdAt', 'updatedAt'])
-        && data.keys().hasOnly(['uid', 'displayName', 'detectedType', 'preferredWing', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'detectedType', 'preferredWing', 'plan', 'createdAt', 'updatedAt'])
         && data.uid is string
         && data.uid == userId
         && isValidId(data.uid)
@@ -47,6 +54,7 @@ service cloud.firestore {
         && data.detectedType >= 1
         && data.detectedType <= 9
         && (!('preferredWing' in data) || (data.preferredWing is string && data.preferredWing.size() >= 2 && data.preferredWing.size() <= 10))
+        && (!('plan' in data) || data.plan in ['free', 'pro'])
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -160,23 +168,156 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidVideoItem(data) {
+      return data.keys().hasAll(['title', 'description', 'youtubeId', 'enneatypeNumber', 'visibility', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['title', 'description', 'youtubeId', 'enneatypeNumber', 'visibility', 'createdAt', 'updatedAt'])
+        && data.title is string
+        && data.title.size() >= 2
+        && data.title.size() <= 160
+        && data.description is string
+        && data.description.size() >= 2
+        && data.description.size() <= 600
+        && data.youtubeId is string
+        && data.youtubeId.size() >= 6
+        && data.youtubeId.size() <= 20
+        && data.youtubeId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.enneatypeNumber is int
+        && data.enneatypeNumber >= 0
+        && data.enneatypeNumber <= 9
+        && data.visibility in ['public', 'pro']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGuidedAudioItem(data) {
+      return data.keys().hasAll([
+          'title',
+          'description',
+          'enneatypeNumber',
+          'visibility',
+          'audioUrl',
+          'storagePath',
+          'durationLabel',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'description',
+          'enneatypeNumber',
+          'visibility',
+          'audioUrl',
+          'storagePath',
+          'durationLabel',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.title is string
+        && data.title.size() >= 2
+        && data.title.size() <= 160
+        && data.description is string
+        && data.description.size() >= 2
+        && data.description.size() <= 600
+        && data.enneatypeNumber is int
+        && data.enneatypeNumber >= 0
+        && data.enneatypeNumber <= 9
+        && data.visibility in ['public', 'pro']
+        && data.audioUrl is string
+        && data.audioUrl.size() >= 10
+        && data.audioUrl.size() <= 1000
+        && data.storagePath is string
+        && data.storagePath.size() >= 4
+        && data.storagePath.size() <= 400
+        && data.durationLabel is string
+        && data.durationLabel.size() >= 1
+        && data.durationLabel.size() <= 30
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJournalEntry(data, userId) {
+      return data.keys().hasAll(['uid', 'enneatypeNumber', 'entryDate', 'stateTag', 'note', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'enneatypeNumber', 'entryDate', 'stateTag', 'note', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.enneatypeNumber is int
+        && data.enneatypeNumber >= 1
+        && data.enneatypeNumber <= 9
+        && data.entryDate is string
+        && data.entryDate.size() == 10
+        && data.entryDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.stateTag in ['ego', 'observacion', 'esencia']
+        && data.note is string
+        && data.note.size() >= 3
+        && data.note.size() <= 1200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isOwner(adminId);
+      allow list, create, update, delete: if false;
+    }
+
+    match /videos/{videoId} {
+      allow get: if isValidId(videoId) && resource.data.visibility in ['public', 'pro'];
+      allow list: if resource.data.visibility in ['public', 'pro'];
+      allow create: if isValidId(videoId)
+        && isAdmin()
+        && isValidVideoItem(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(videoId)
+        && isAdmin()
+        && isValidVideoItem(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'youtubeId', 'enneatypeNumber', 'visibility', 'updatedAt']);
+      allow delete: if isValidId(videoId) && isAdmin();
+    }
+
+    match /guidedAudios/{audioId} {
+      allow get: if isValidId(audioId) && resource.data.visibility in ['public', 'pro'];
+      allow list: if resource.data.visibility in ['public', 'pro'];
+      allow create: if isValidId(audioId)
+        && isAdmin()
+        && isValidGuidedAudioItem(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(audioId)
+        && isAdmin()
+        && isValidGuidedAudioItem(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'enneatypeNumber', 'visibility', 'durationLabel', 'updatedAt']);
+      allow delete: if isValidId(audioId) && isAdmin();
+    }
+
     match /users/{userId} {
-      allow get: if isValidId(userId) && isOwner(userId);
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
       allow list: if false;
       allow create: if isValidId(userId)
         && isVerifiedOwner(userId)
         && isValidUserProfile(incoming(), userId)
+        && (!('plan' in incoming()) || incoming().plan == 'free' || isAdmin())
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
       allow update: if isValidId(userId)
-        && isVerifiedOwner(userId)
         && isValidUserProfile(incoming(), userId)
         && incoming().uid == existing().uid
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
         && (
-          incoming().diff(existing()).affectedKeys().hasOnly(['detectedType', 'preferredWing', 'updatedAt'])
-          || incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['plan', 'detectedType', 'preferredWing', 'displayName', 'updatedAt'])) ||
+          (
+            isVerifiedOwner(userId)
+            && ((!('plan' in existing()) && !('plan' in incoming())) || ('plan' in existing() && 'plan' in incoming() && incoming().plan == existing().plan))
+            && (
+              incoming().diff(existing()).affectedKeys().hasOnly(['detectedType', 'preferredWing', 'updatedAt'])
+              || incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])
+            )
+          )
         );
       allow delete: if false;
 
@@ -222,6 +363,26 @@ service cloud.firestore {
           && incoming().updatedAt == request.time
           && incoming().diff(existing()).affectedKeys().hasOnly(['completedDays', 'updatedAt']);
         allow delete: if isValidId(userId) && isValidId(planId) && isVerifiedOwner(userId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow get: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(entryId)
+          && isVerifiedOwner(userId)
+          && isValidJournalEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidId(entryId)
+          && isVerifiedOwner(userId)
+          && isValidJournalEntry(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['enneatypeNumber', 'entryDate', 'stateTag', 'note', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(entryId) && isVerifiedOwner(userId);
       }
     }
   }

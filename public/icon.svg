@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0a" />
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#d4a853" stroke-width="10" />
+  <circle cx="256" cy="256" r="142" fill="none" stroke="#d4a853" stroke-width="2" stroke-opacity="0.35" />
+  <!-- Equilátero 9-3-6 -->
+  <polygon
+    points="256,72 415.3,348 96.7,348"
+    fill="none"
+    stroke="#d4a853"
+    stroke-width="6"
+    stroke-linejoin="round"
+  />
+  <!-- Hexada 1-4-2-8-5-7-1 -->
+  <polyline
+    points="374.3,115.1 318.9,428.9 437.2,224 74.8,224 193.1,428.9 137.7,115.1 374.3,115.1"
+    fill="none"
+    stroke="#e5bc6e"
+    stroke-width="4.5"
+    stroke-linejoin="round"
+    stroke-opacity="0.85"
+  />
+  <circle cx="256" cy="256" r="10" fill="#d4a853" />
+</svg>

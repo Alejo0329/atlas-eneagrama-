@@ -2,7 +2,7 @@
   "entities": {
     "UserProfile": {
       "title": "UserProfile",
-      "description": "Perfil del usuario autenticado con su eneatipo detectado y ala preferida.",
+      "description": "Perfil del usuario autenticado con su eneatipo detectado, ala preferida y membresía Freemium.",
       "type": "object",
       "properties": {
         "uid": {
@@ -25,6 +25,10 @@
           "minLength": 2,
           "maxLength": 10
         },
+        "plan": {
+          "type": "string",
+          "enum": ["free", "pro"]
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -34,7 +38,7 @@
           "format": "date-time"
         }
       },
-      "required": ["uid", "displayName", "detectedType", "createdAt", "updatedAt"]
+      "required": ["uid", "displayName", "detectedType", "plan", "createdAt", "updatedAt"]
     },
     "DiagnosticResult": {
       "title": "DiagnosticResult",
@@ -183,12 +187,149 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "VideoItem": {
+      "title": "VideoItem",
+      "description": "Video integrado de YouTube gestionado por el administrador con visibilidad pública o Pro.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 600
+        },
+        "youtubeId": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 20,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "enneatypeNumber": {
+          "type": "integer"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "pro"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["title", "description", "youtubeId", "enneatypeNumber", "visibility", "createdAt", "updatedAt"]
+    },
+    "GuidedAudioItem": {
+      "title": "GuidedAudioItem",
+      "description": "Meditación guiada en audio alojada en Firebase Storage con visibilidad pública o Pro.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 600
+        },
+        "enneatypeNumber": {
+          "type": "integer"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "pro"]
+        },
+        "audioUrl": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "storagePath": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 400
+        },
+        "durationLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "enneatypeNumber",
+        "visibility",
+        "audioUrl",
+        "storagePath",
+        "durationLabel",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "GrowthJournalEntry": {
+      "title": "GrowthJournalEntry",
+      "description": "Nota breve y privada del Diario de Crecimiento asociada a un eneatipo y fecha.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "enneatypeNumber": {
+          "type": "integer"
+        },
+        "entryDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "stateTag": {
+          "type": "string",
+          "enum": ["ego", "observacion", "esencia"]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 1200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "enneatypeNumber", "entryDate", "stateTag", "note", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Preferencias y eneatipo activo del usuario autenticado."
+      "description": "Preferencias, eneatipo activo y estado de membresía del usuario autenticado."
     },
     "/users/{userId}/diagnostics/{diagnosticId}": {
       "schema": { "$ref": "#/entities/DiagnosticResult" },
@@ -201,6 +342,18 @@
     "/users/{userId}/actionPlans/{planId}": {
       "schema": { "$ref": "#/entities/ActionPlan" },
       "description": "Planes semanales de integración generados por IA."
+    },
+    "/users/{userId}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/GrowthJournalEntry" },
+      "description": "Reflexiones diarias privadas del Diario de Crecimiento del usuario."
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/VideoItem" },
+      "description": "Videoteca de YouTube gestionada por administración con control de visibilidad public/pro."
+    },
+    "/guidedAudios/{audioId}": {
+      "schema": { "$ref": "#/entities/GuidedAudioItem" },
+      "description": "Catálogo de meditaciones guiadas en Firebase Storage con control de visibilidad public/pro."
     }
   }
 }

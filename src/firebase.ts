@@ -1,12 +1,28 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
+import {
+  type FirestoreSettings,
+  doc,
+  getDocFromServer,
+  initializeFirestore,
+} from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const firestoreSettings = {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+} as FirestoreSettings;
+
+export const db = initializeFirestore(
+  app,
+  firestoreSettings,
+  firebaseConfig.firestoreDatabaseId,
+);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export enum OperationType {
